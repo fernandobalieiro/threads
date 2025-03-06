@@ -1,57 +1,34 @@
 package com.training.quarkus;
 
-import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import com.training.quarkus.repository.CallerRepository;
 
 public class Threads {
 
-    final static ExecutorService executor = Executors.newFixedThreadPool(10);
+    private static final ExecutorService executor = Executors.newFixedThreadPool(100);
 
     public static void main(String[] args) throws InterruptedException {
+        final var start = System.currentTimeMillis();
 
-        final var list = new ArrayList<Future<Integer>>();
-
-        for (int i = 0; i < 10; i++) {
-            final var calculation = new IntegerCalculation(CallerRepository.getInstance());
-            list.add(executor.submit(calculation));
+        for (int i = 0; i < 1_000_000; i++) {
+            final var calculation = new IntegerCalculation();
+            executor.submit(calculation);
         }
 
-        executor.awaitTermination(1000, java.util.concurrent.TimeUnit.MILLISECONDS);
+        executor.awaitTermination(20000, java.util.concurrent.TimeUnit.MILLISECONDS);
 
-        list.forEach(e -> {
-            try {
-                System.out.println("Result: " + e.get());
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            } catch (ExecutionException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
-        //System.out.println("Result: " + list);
+        final var end = System.currentTimeMillis();
+        System.out.println("Time taken: " + (end - start) + "ms");
     }
 
-    final static class IntegerCalculation implements Callable<Integer> {
-
-        final CallerRepository callerRepository;
-
-        public IntegerCalculation(final CallerRepository callerRepository) {
-            this.callerRepository = callerRepository;
-        }
+    static final class IntegerCalculation implements Runnable {
 
         @Override
-        public Integer call() {
+        public void run() {
             final var random = new Random();
-            System.out.println(Thread.currentThread().getName());
-            return random.nextInt();
+            System.out.println(Thread.currentThread().getName() + ": " +  random.nextInt());
         }
-
     }
 }
 
