@@ -1,34 +1,30 @@
 package com.training.quarkus;
 
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Threads {
 
-    private static final ExecutorService executor = Executors.newFixedThreadPool(100);
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
 
-    public static void main(String[] args) throws InterruptedException {
-        final var start = System.currentTimeMillis();
+        final var completableFuture = calculateAsync();
 
-        for (int i = 0; i < 1_000_000; i++) {
-            final var calculation = new IntegerCalculation();
-            executor.submit(calculation);
-        }
-
-        executor.awaitTermination(20000, java.util.concurrent.TimeUnit.MILLISECONDS);
-
-        final var end = System.currentTimeMillis();
-        System.out.println("Time taken: " + (end - start) + "ms");
+        final var result = completableFuture.get();
+        System.out.println(result);
     }
 
-    static final class IntegerCalculation implements Runnable {
+    public static Future<String> calculateAsync() {
+        final var completableFuture = new CompletableFuture<String>();
 
-        @Override
-        public void run() {
-            final var random = new Random();
-            System.out.println(Thread.currentThread().getName() + ": " +  random.nextInt());
-        }
+        Executors.newCachedThreadPool().submit(() -> {
+            Thread.sleep(10_000);
+            completableFuture.complete("Hello!");
+            return null;
+        });
+
+        return completableFuture;
     }
 }
 
